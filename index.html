@@ -722,7 +722,7 @@ H2: (ch2, 2F, ch2, slst) x 5"></textarea>
     grid.innerHTML = filtered.map(c => {
       const stInfo = STATUS_MAP[c.status] || STATUS_MAP.todo;
       const imgHtml = c.coverImage
-        ? `<img class="card-img" src="${c.coverImage}" alt="${escapeHtml(c.title)}" />`
+        ? `<img class="card-img" loading="lazy" src="${c.coverImage}" alt="${escapeHtml(c.title)}" />`
         : `<div class="card-img">🧶 Chưa có ảnh</div>`;
 
       return `
@@ -802,7 +802,7 @@ function removeEditingRef(idx) {
 
     let coverImage = existing ? existing.coverImage : '';
     const coverFile = document.getElementById('fCover').files[0];
-    if (coverFile) coverImage = await fileToDataURL(coverFile);
+    if (coverFile) coverImage = 'images/' + coverFile.name;
 
     let refFiles = [...editingRefFiles];
     const newRefs = document.getElementById('fRefs').files;
@@ -810,7 +810,7 @@ function removeEditingRef(idx) {
       refFiles.push({
         name: file.name,
         type: file.type,
-        dataUrl: await fileToDataURL(file)
+        dataUrl: 'images/' + file.name
       });
     }
 
@@ -971,7 +971,9 @@ if (c.coverImage) {
   function openAttachment(index) {
     const c = allCharts.find(item => item.id === currentChartId);
     if (c && c.refFiles && c.refFiles[index]) {
-      openDataUrlInNewTab(c.refFiles[index].dataUrl);
+      const url = c.refFiles[index].dataUrl;
+      if (url.startsWith('data:')) openDataUrlInNewTab(url);
+      else window.open(url, '_blank');
     }
   }
 
