@@ -372,6 +372,14 @@
 
     .chart-line:hover { background: var(--surface-soft); }
 
+    .chart-line.plain-line {
+      cursor: default;
+    }
+
+    .chart-line.plain-line:hover {
+      background: transparent;
+    }
+
     .chart-line.checked {
       color: var(--text-muted);
       text-decoration: line-through;
@@ -462,6 +470,19 @@ body.public-mode .header-actions,
 body.public-mode #viewModal .modal-header button:not(:last-child),
 body.public-mode .btn-danger {
   display: none !important;
+}
+.chart-link-line {
+  padding: 6px 10px;
+  margin: 4px 0;
+  word-break: break-all;
+}
+.chart-link-line a {
+  color: #b85c38;
+  text-decoration: underline;
+  font-weight: 500;
+}
+.chart-link-line a:hover {
+  opacity: 0.75;
 }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -559,6 +580,13 @@ body.public-mode .btn-danger {
           <div class="hint" id="ocrStatus" style="color:var(--accent); font-weight:600;"></div>
           <div id="existingRefsList" class="attachments-list"></div>
         </div>
+      </div>
+
+      <div class="form-group">
+        <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; margin-bottom:0;">
+          <input type="checkbox" id="fHideCheckboxes" style="width:auto; cursor:pointer;" />
+          <span>Ẩn ô tích ở đầu dòng (dùng cho bài kí hiệu, ghi chú, tips...)</span>
+        </label>
       </div>
 
       <div class="form-group">
@@ -754,6 +782,7 @@ H2: (ch2, 2F, ch2, slst) x 5"></textarea>
     document.getElementById('fHook').value = chart ? (chart.hook || '') : '';
     document.getElementById('fYarn').value = chart ? (chart.yarn || '') : '';
     document.getElementById('fPattern').value = chart ? (chart.patternText || '') : '';
+    document.getElementById('fHideCheckboxes').checked = Boolean(chart?.hideCheckboxes);
     document.getElementById('fNotes').value = chart ? (chart.notes || '') : '';
     document.getElementById('fCover').value = '';
     document.getElementById('fRefs').value = '';
@@ -824,8 +853,10 @@ function removeEditingRef(idx) {
       coverImage,
       refFiles,
       patternText: document.getElementById('fPattern').value,
+      hideCheckboxes: document.getElementById('fHideCheckboxes').checked,
       notes: document.getElementById('fNotes').value.trim(),
       checkedLines: existing ? (existing.checkedLines || []) : [],
+      collapsedSections: existing ? (existing.collapsedSections || []) : [],
       rowCounter: existing ? (existing.rowCounter || 0) : 0,
       updatedAt: Date.now()
     };
@@ -848,6 +879,7 @@ function removeEditingRef(idx) {
     const lines = (c.patternText || '').split('\n');
     const checkedSet = new Set(c.checkedLines || []);
     const collapsedSet = new Set(c.collapsedSections || []);
+    const hideChecks = Boolean(c.hideCheckboxes);
 
     let chartHtml = '';
     let inSection = false;
@@ -872,6 +904,19 @@ function removeEditingRef(idx) {
        chartHtml += `<summary class="chart-section-title">${escapeHtml(trimmed)}</summary>`;
        inSection = true;
        sectionIdx++;
+      } else if (/^https?:\/\/\S+$/i.test(trimmed)) {
+        const safeUrl = escapeHtml(trimmed);
+        chartHtml += `
+         <div class="chart-link-line">
+         🔗 <a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeUrl}</a>
+         </div>
+         `;
+      } else if (hideChecks) {
+        chartHtml += `
+          <div class="chart-line plain-line">
+            <span>${escapeHtml(trimmed)}</span>
+          </div>
+        `;
       } else {
         const isChecked = checkedSet.has(idx);
         chartHtml += `
@@ -914,8 +959,8 @@ function removeEditingRef(idx) {
       ${refsHtml}
 
       <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
-        <strong>📖 Nội dung Chart (bấm vào từng hàng để đánh dấu đã móc):</strong>
-        <button onclick="resetChecks()" style="font-size:0.8rem;">Bỏ đánh dấu tất cả</button>
+        <strong>${hideChecks ? '📖 Nội dung:' : '📖 Nội dung Chart (bấm vào từng hàng để đánh dấu đã móc):'}</strong>
+        ${hideChecks ? '' : '<button onclick="resetChecks()" style="font-size:0.8rem;">Bỏ đánh dấu tất cả</button>'}
       </div>
       <div class="chart-viewer">
         ${c.patternText?.trim() ? chartHtml : '<span style="color:var(--text-muted)">Chưa nhập nội dung chart.</span>'}
