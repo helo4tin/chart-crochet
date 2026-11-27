@@ -466,6 +466,17 @@ summary.chart-section-title:hover {
   padding-bottom: 10px;
   border-bottom: 2px solid #3d6b59;
 }
+.chart-subtitle {
+  font-family: var(--font-sans);
+  font-size: 1.03rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 12px 0 4px 0;
+  padding: 4px 10px;
+}
+summary.chart-section-title + .chart-subtitle {
+  margin-top: 4px;
+}
 body.public-mode .header-actions,
 body.public-mode #viewModal .modal-header button:not(:last-child),
 body.public-mode .btn-danger {
@@ -591,10 +602,15 @@ body.public-mode .btn-danger {
 
       <div class="form-group">
         <label>Nội dung Chart (Đồng bộ font chữ)</label>
-        <textarea id="fPattern" class="chart-input" placeholder="Mẹo: Dòng kết thúc bằng dấu hai chấm (:) sẽ tự động thành Tiêu đề phần.
+        <textarea id="fPattern" class="chart-input" placeholder="Mẹo định dạng:
+- Bắt đầu bằng # : Tiêu đề lớn
+- Kết thúc bằng : : Phần xổ xuống (thu gọn/mở rộng)
+- Bắt đầu bằng ## : Tiêu đề phụ (chữ to và đậm hơn dòng thường, không có ô tích)
 
 Ví dụ:
+# Chậu hoa mặt cười
 PHẦN CHẬU CÂY:
+## Phần đáy chậu
 H1: MR 6X (6)
 H2: 6V (12)
 H3: (X, V) x 6 (18)
@@ -891,7 +907,9 @@ function removeEditingRef(idx) {
         chartHtml += '<div style="height:8px"></div>';
         return;
       }
-      if (trimmed.startsWith('#')) {
+      if (trimmed.startsWith('##')) {
+       chartHtml += `<div class="chart-subtitle">${escapeHtml(trimmed.replace(/^##+\s*/, ''))}</div>`;
+     } else if (trimmed.startsWith('#')) {
        if (inSection) {
          chartHtml += '</details>';
          inSection = false;
